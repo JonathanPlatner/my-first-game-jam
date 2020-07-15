@@ -14,7 +14,7 @@ public class Charger : Enemy
 
     enum Facing { Left, Right }
     private Facing facing;
-    enum State { Idle, Patrolling, Preparing, Charging, Waiting }
+    enum State { Idle, Patrolling, Attacking, }
     // State explanation
     // Idle - standing around doing nothing. Will switch to patrolling after a random amount of time.
     // Patrolling - moving in a straight line. Will switch to idle at the edge of a platform or after a random amount of time.
@@ -35,14 +35,25 @@ public class Charger : Enemy
     private float[] maxForces;
     private float moveForce;
     [SerializeField]
-    private float dragFactor;
+    private float dragFactor = 1;
 
+    [Header("Detection")]
     [SerializeField]
     private float detectionRange = 5f;
     [SerializeField]
-    private float detectionAngle = 40f;
+    private float detectionAngle = 20;
     private float detectionSlope; // Going to convert the angle into a slope, so I don't have to work with inverse tangents (cheaper computationally)
     private float detectionXValue;
+
+    [Header("Attacking")]
+    [SerializeField]
+    private Transform blade;
+    [SerializeField]
+    private SpriteRenderer bladeSprite;
+    [SerializeField]
+    private float swingSpeed = 10;
+    [SerializeField]
+    private float swingMax = 100;
 
     private void Start()
     {
@@ -69,6 +80,9 @@ public class Charger : Enemy
 
         detectionSlope = Mathf.Tan(detectionAngle * Mathf.Deg2Rad);
         detectionXValue = Mathf.Cos(detectionAngle * Mathf.Deg2Rad) * detectionRange;
+
+        facing = (Facing)UnityEngine.Random.Range(0, 2);
+        blade.rotation = Quaternion.Euler(0, 0, 90);
     }
 
     private void Update()
@@ -76,7 +90,7 @@ public class Charger : Enemy
 
         Idle();
         Patrol();
-        Prepare();
+        Attack();
         if(justTransitioned)
         {
             ResetTimers();
@@ -84,15 +98,13 @@ public class Charger : Enemy
         }
 
         //Debug.Log(state);
+        //Swing();
 
     }
     private void FixedUpdate()
     {
         rb.AddForce(Vector2.right * moveForce);
-        //Debug.Log(moveForce);
-        // Drag
         rb.AddForce(-rb.velocity.x * Vector2.right * dragFactor);
-        //Debug.Log(rb.velocity.x);
     }
 
     private void ResetTimers()
@@ -124,20 +136,23 @@ public class Charger : Enemy
                 moveForce = 0;
             }
 
-           
 
+            PrepareSwing();
             // Transition Conditions
             stateTimers[(int)state] += Time.deltaTime;
             if(stateTimers[(int)state] >= stateActionDurations[(int)state])
             {
                 state = State.Patrolling;
                 justTransitioned = true;
+                return;
             }
             if(Detect())
             {
                 //Debug.Log("Detected");
-                state = State.Preparing;
+                state = State.Attacking;
                 justTransitioned = true;
+                SetTargetAngle(bladeAngle, facing == Facing.Left ? -20 : 20, 0.2f);
+                return;
             }
         }
     }
@@ -156,33 +171,36 @@ public class Charger : Enemy
             if(facing == Facing.Left) moveForce *= -1;
 
 
-            RaycastHit2D hit = Physics2D.Raycast(rb.position + (facing == Facing.Left ? Vector2.left : Vector2.right), Vector2.down * 0.6f, 1f);
+
+            //RaycastHit2D hit = Physics2D.Raycast(rb.position + (facing == Facing.Left ? Vector2.left : Vector2.right), Vector2.down * 0.6f, 1f);
             //Debug.DrawRay(rb.position + (facing == Facing.Left ? Vector2.left : Vector2.right), Vector2.down * 0.6f);
             if(Detect())
             {
                 //Debug.Log("Detected");
                 moveForce = 0;
-                state = State.Preparing;
+                state = State.Attacking;
                 justTransitioned = true;
+                SetTargetAngle(bladeAngle, facing == Facing.Left ? -20 : 20, 0.2f);
                 return;
             }
-            if(hit.collider != null)
+            if(LedgeDetect())
             {
-                if(hit.collider.tag != "Ground")
-                {
-                    state = State.Idle;
-                    justTransitioned = true;
-                    facing = (Facing)(1 - (int)facing);
-                    return;
-                }
-            }
-            else if(hit.collider == null)
-            {
+                //if(hit.collider.tag != "Ground")
+                //{
                 state = State.Idle;
                 justTransitioned = true;
                 facing = (Facing)(1 - (int)facing);
                 return;
+                //}
             }
+            PrepareSwing();
+            //else if(hit.collider == null)
+            //{
+            //    state = State.Idle;
+            //    justTransitioned = true;
+            //    facing = (Facing)(1 - (int)facing);
+            //    return;
+            //}
 
 
             // Transition Conditions
@@ -196,15 +214,46 @@ public class Charger : Enemy
         }
     }
 
-    private void Prepare()
+    private void Attack()
     {
-        if (state == State.Preparing)
+        if(state == State.Attacking)
         {
+            moveForce = maxStateForces[(int)state];
+            if(facing == Facing.Left) moveForce *= -1;
+
+
+            if(target.position.x > rb.position.x)
+            {
+                facing = Facing.Right;
+            }
+            else
+            {
+                facing = Facing.Left;
+            }
+            moveForce = maxStateForces[(int)state];
+            if(facing == Facing.Left) moveForce *= -1;
+
+            if(LedgeDetect())
+            {
+                if(Mathf.Abs(rb.velocity.x) > 0.1f)
+                {
+                    moveForce = -rb.velocity.x * 2 * dragFactor;
+                }
+                else
+                {
+                    moveForce = 0;
+                }
+                PrepareSwing();
+            }
+            else
+            {
+                Swing();
+            }
             if(LoseDetect())
             {
-                //Debug.Log("Lost");
                 state = State.Idle;
                 justTransitioned = true;
+                return;
             }
         }
     }
@@ -225,12 +274,12 @@ public class Charger : Enemy
             {
                 float x = facing == Facing.Left ? rb.position.x - target.position.x : target.position.x - rb.position.x;
                 float y = target.position.y - rb.position.y;
-                if(Mathf.Abs(y) < x * detectionSlope)
+                if(y < x * detectionSlope && y > 0)
                 {
                     RaycastHit2D hit = Physics2D.Raycast(rb.position, (Vector2)target.position - rb.position);
                     //Debug.Log(hit.transform.tag);
                     //Debug.DrawRay(rb.position, (Vector2)target.position - rb.position);
-                    if (hit.collider.tag == "Player")
+                    if(hit.collider.tag == "Player")
                     {
                         //Debug.Log("Detected");
                         //Debug.DrawLine(rb.position, hit.point, Color.green);
@@ -240,7 +289,7 @@ public class Charger : Enemy
                     {
                         //Debug.DrawLine(rb.position, hit.point, Color.red);
                     }
-                    
+
                 }
                 else
                 {
@@ -257,7 +306,78 @@ public class Charger : Enemy
     {
         RaycastHit2D hit = Physics2D.Raycast(rb.position, (Vector2)target.position - rb.position);
         //Debug.DrawRay(rb.position, (Vector2)target.position - rb.position);
-        if (hit.transform.tag != "Player")
+        if(hit.transform != null)
+        {
+            if(hit.transform.tag != "Player")
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private float interpolator;
+    private float swingDuration = 1;
+    private float bladeAngle;
+    private float startAngle;
+    private float endAngle;
+    private bool swing;
+    private void Swing()
+    {
+
+        interpolator += Time.deltaTime / swingDuration;
+        bladeAngle = startAngle * (1 - interpolator) + endAngle * interpolator;
+        if(interpolator >= 1)
+        {
+            interpolator = 1;
+            bladeAngle = startAngle * (1 - interpolator) + endAngle * interpolator;
+            swing = !swing;
+            if(swing)
+            {
+                SetTargetAngle(bladeAngle, facing == Facing.Left ? 110 : -110, 0.2f);
+            }
+            else
+            {
+                SetTargetAngle(bladeAngle, facing == Facing.Left ? -20 : 20, 0.2f);
+            }
+
+        }
+
+        blade.rotation = Quaternion.Euler(0, 0, bladeAngle + 90);
+    }
+
+    private void PrepareSwing()
+    {
+        interpolator += Time.deltaTime / swingDuration;
+        bladeAngle = startAngle * (1 - interpolator) + endAngle * interpolator;
+        if(interpolator >= 1)
+        {
+            interpolator = 1;
+            bladeAngle = startAngle * (1 - interpolator) + endAngle * interpolator;
+
+            SetTargetAngle(bladeAngle, facing == Facing.Left ? -20 : 20, 1f);
+        }
+
+        blade.rotation = Quaternion.Euler(0, 0, bladeAngle + 90);
+    }
+    private void SetTargetAngle(float start, float end, float duration)
+    {
+        interpolator = 0;
+        startAngle = start; endAngle = end; swingDuration = duration;
+    }
+
+    private bool LedgeDetect()
+    {
+        RaycastHit2D hit = Physics2D.Raycast(rb.position + (facing == Facing.Left ? Vector2.left : Vector2.right), Vector2.down, 0.3f);
+        //Debug.DrawRay(rb.position + (facing == Facing.Left ? Vector2.left : Vector2.right), Vector2.down * 0.3f);
+        if(hit.collider != null)
+        {
+            if(hit.collider.tag != "Ground")
+            {
+                return true;
+            }
+        }
+        else if(hit.collider == null)
         {
             return true;
         }
