@@ -474,7 +474,7 @@ Rigidbody2D:
   m_LinearDrag: 0.2
   m_AngularDrag: 0.05
   m_GravityScale: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 5e5b58f10b80800499045842bdde35ce, type: 2}
   m_Interpolate: 0
   m_SleepingMode: 1
   m_CollisionDetection: 0
@@ -571,6 +571,7 @@ MonoBehaviour:
   SPEED_MAX: 10
   GROUNDED_EPSILON: 0.1
   JUMP_SPEED: 6
+  HORIZONTAL_DRAG: 0
 --- !u!1 &1685600629
 GameObject:
   m_ObjectHideFlags: 0
