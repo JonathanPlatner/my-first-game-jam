@@ -19,9 +19,6 @@ public class Ranger : Enemy
     private State state;
     private bool justTransitioned;
 
-    //private float[] stateTimers;
-    //private float[] stateActionDurations;
-
     [Header("Motion")]
     [SerializeField]
     private Rigidbody2D rb;
@@ -38,6 +35,13 @@ public class Ranger : Enemy
     private float detectionRange = 5f;
     [SerializeField]
     private float detectionAngle = 20;
+
+    [Header("Attacking")]
+    [SerializeField]
+    private float cooldownTime = 0.25f;
+    private float remainingCooldownTime;
+    public GameObject projectile;
+    public Transform shotPoint;
     //private float detectionSlope;
     //private float detectionXValue;
 
@@ -52,6 +56,7 @@ public class Ranger : Enemy
             Debug.LogWarning(e.Message);
         }
         state = State.Patrolling;
+        moveForce = -1f;
 
         // Create arrays to hold one timer per state type
         //stateTimers = new float[Enum.GetNames(typeof(State)).Length];
@@ -68,19 +73,22 @@ public class Ranger : Enemy
 
         enemySprite = gameObject.GetComponent<SpriteRenderer>();
         //facing = (Facing)UnityEngine.Random.Range(0, 2);
-        facing = Facing.Right;
+        facing = Facing.Left;
+        remainingCooldownTime = cooldownTime;
     }
 
     private void Update()
     {
         Patrol();
+        Attack();
         enemySprite.flipX = facing == Facing.Right;
-        // Attack();
-        // if (justTransitioned)
-        // {
-        //     ResetTimers();
-        //     justTransitioned = false;
-        // }
+
+        // Change direction if enemy reaches a ledge.
+        if (LedgeDetect())
+        {
+            Turn();
+        }
+        remainingCooldownTime -= Time.deltaTime;
     }
 
     private void FixedUpdate()
@@ -93,20 +101,55 @@ public class Ranger : Enemy
     {
         if (state == State.Patrolling)
         {
-            moveForce = maxStateForces[(int)state];
-            if (facing == Facing.Left) moveForce *= -1;
-
-            if (LedgeDetect())
+            if (CanShoot())
             {
-                facing = facing == Facing.Left ? Facing.Right : Facing.Left;
+                Shoot();
+                remainingCooldownTime = cooldownTime;
             }
+            //moveForce = maxStateForces[(int)state];
+
+            //if (Detect())
+            //{
+            //    state = State.Attacking;
+            //    return;
+            //}       
         }
+    }
+
+    private void Attack()
+    {
+        if (state == State.Attacking)
+        {
+            //moveForce = maxStateForces[(int)state];      
+        }
+    }
+
+    private bool Detect()
+    {
+        //return false;
+        return true;
+    }
+
+    private void Shoot()
+    {
+        Instantiate(projectile, shotPoint.position, Quaternion.identity);
+    }
+
+    private bool CanShoot()
+    {
+        return remainingCooldownTime <= 0;
+    }
+
+    private void Turn()
+    {
+        facing = facing == Facing.Left ? Facing.Right : Facing.Left;
+        moveForce *= -1;
     }
 
     private bool LedgeDetect()
     {
-        RaycastHit2D hit = Physics2D.Raycast(rb.position + (facing == Facing.Left ? Vector2.left : Vector2.right), Vector2.down, 0.3f);
-        Debug.DrawRay(rb.position + (facing == Facing.Left ? Vector2.left : Vector2.right), Vector2.down * 0.3f);
+        RaycastHit2D hit = Physics2D.Raycast(rb.position + (facing == Facing.Left ? Vector2.left : Vector2.right), Vector2.down, 0.5f);
+        //Debug.DrawRay(rb.position + (facing == Facing.Left ? Vector2.left : Vector2.right), Vector2.down * 0.5f);
         if (hit.collider != null)
         {
             if (hit.collider.tag != "Ground")
