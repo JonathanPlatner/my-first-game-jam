@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using System;
 using UnityEngine;
 
@@ -12,12 +10,11 @@ public class Ranger : Enemy
     private Transform target;
     public override Transform Target { get { return target; } }
 
-    enum Facing { Left, Right }
-    private Facing facing;
+    enum Direction { Left, Right }
+    private Direction facing;
     enum State { Idle, Patrolling, Attacking }
 
     private State state;
-    private bool justTransitioned;
 
     [Header("Motion")]
     [SerializeField]
@@ -42,8 +39,7 @@ public class Ranger : Enemy
     private float remainingCooldownTime;
     public GameObject projectile;
     public Transform shotPoint;
-    //private float detectionSlope;
-    //private float detectionXValue;
+    private float detectionSlope;
 
     private void Start()
     {
@@ -51,43 +47,54 @@ public class Ranger : Enemy
         {
             target = GameObject.FindGameObjectWithTag("Player").transform;
         }
-        catch(NullReferenceException e)
+        catch (NullReferenceException e)
         {
             Debug.LogWarning(e.Message);
         }
         state = State.Patrolling;
-        moveForce = -1f;
 
         // Create arrays to hold one timer per state type
-        //stateTimers = new float[Enum.GetNames(typeof(State)).Length];
-        //stateActionDurations = new float[Enum.GetNames(typeof(State)).Length];
         maxStateForces = new float[Enum.GetNames(typeof(State)).Length];
-        for (int i=0; i<Mathf.Min(maxStateForces.Length, maxForces.Length); i++)
+        enemySprite = gameObject.GetComponent<SpriteRenderer>();
+
+        for (int i = 0; i < Mathf.Min(maxStateForces.Length, maxForces.Length); i++)
         {
             maxStateForces[i] = maxForces[i];
         }
-        justTransitioned = true;
 
-        //detectionSlope = Mathf.Tan(detectionAngle * Mathf.Deg2Rad);
-        //detectionXValue = Mathf.Cos(detectionAngle * Mathf.Deg2Rad) * detectionRange;
+        detectionSlope = Mathf.Tan(detectionAngle * Mathf.Deg2Rad);
 
-        enemySprite = gameObject.GetComponent<SpriteRenderer>();
-        //facing = (Facing)UnityEngine.Random.Range(0, 2);
-        facing = Facing.Left;
         remainingCooldownTime = cooldownTime;
+
+        ChangeDirectionTo(Direction.Left);
     }
 
     private void Update()
     {
-        Patrol();
-        Attack();
-        enemySprite.flipX = facing == Facing.Right;
+        switch (state)
+        {
+            case State.Patrolling:
+                Patrol();
+                break;
+            case State.Attacking:
+                Attack();
+                break;
+        }
 
-        // Change direction if enemy reaches a ledge.
         if (LedgeDetect())
         {
-            Turn();
+            switch (state)
+            {
+                case State.Patrolling:
+                    Direction newDirection = facing == Direction.Right || rb.velocity.x > 0 ? Direction.Left : Direction.Right;
+                    ChangeDirectionTo(newDirection);
+                    break;
+                case State.Attacking:
+                    moveForce = 0;
+                    break;
+            }
         }
+
         remainingCooldownTime -= Time.deltaTime;
     }
 
@@ -99,57 +106,71 @@ public class Ranger : Enemy
 
     private void Patrol()
     {
-        if (state == State.Patrolling)
-        {
-            if (CanShoot())
-            {
-                Shoot();
-                remainingCooldownTime = cooldownTime;
-            }
-            //moveForce = maxStateForces[(int)state];
+        moveForce = maxStateForces[(int)state];
+        if (facing == Direction.Left) moveForce *= -1;
 
-            //if (Detect())
-            //{
-            //    state = State.Attacking;
-            //    return;
-            //}       
+        if (Detect())
+        {
+            state = State.Attacking;
+            return;
         }
     }
 
     private void Attack()
     {
-        if (state == State.Attacking)
+        //float distToPlayerSqr = (rb.position - (Vector2)target.position).sqrMagnitude;
+        moveForce = maxStateForces[(int)state];
+        if (remainingCooldownTime <= 0)
         {
-            //moveForce = maxStateForces[(int)state];      
+            Instantiate(projectile, shotPoint.position, Quaternion.identity);
+            remainingCooldownTime = cooldownTime;
         }
     }
 
     private bool Detect()
     {
-        //return false;
-        return true;
+        if (target != null)
+        {
+            if ((rb.position - (Vector2)target.position).sqrMagnitude <= detectionRange * detectionRange)
+            {
+                float x = facing == Direction.Left ? rb.position.x - target.position.x : target.position.x - rb.position.x;
+                float y = target.position.y - rb.position.y;
+                if (y < x * detectionSlope && y > 0)
+                {
+                    RaycastHit2D hit = Physics2D.Raycast(rb.position, (Vector2)target.position - rb.position);
+                    if (hit.collider.tag == "Player")
+                    {
+                        Debug.DrawLine(rb.position, hit.point, Color.red);
+                        return true;
+                    }
+                    else
+                    {
+                        Debug.DrawLine(rb.position, hit.point, Color.red);
+                    }
+
+                }
+                else
+                {
+                    Debug.DrawLine(rb.position, target.position, Color.red);
+                }
+
+            }      
+        }
+        return false;
     }
 
-    private void Shoot()
+    private void ChangeDirectionTo(Direction newDirection)
     {
-        Instantiate(projectile, shotPoint.position, Quaternion.identity);
-    }
-
-    private bool CanShoot()
-    {
-        return remainingCooldownTime <= 0;
-    }
-
-    private void Turn()
-    {
-        facing = facing == Facing.Left ? Facing.Right : Facing.Left;
+        facing = newDirection;
         moveForce *= -1;
+        enemySprite.flipX = newDirection == Direction.Right;
     }
 
     private bool LedgeDetect()
     {
-        RaycastHit2D hit = Physics2D.Raycast(rb.position + (facing == Facing.Left ? Vector2.left : Vector2.right), Vector2.down, 0.5f);
-        //Debug.DrawRay(rb.position + (facing == Facing.Left ? Vector2.left : Vector2.right), Vector2.down * 0.5f);
+        Direction movingDirection = rb.velocity.x < 0 ? Direction.Left : Direction.Right;
+        RaycastHit2D hit = Physics2D.Raycast(rb.position + (movingDirection == Direction.Left ? Vector2.left : Vector2.right), Vector2.down, 0.5f);
+        //Debug.DrawRay(rb.position + (movingDirection == Direction.Left ? Vector2.left : Vector2.right), Vector2.down * 0.5f);
         if (hit.collider != null)
         {
             if (hit.collider.tag != "Ground")
