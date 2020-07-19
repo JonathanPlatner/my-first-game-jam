@@ -1,50 +1,22 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class BouncyMovementController : MovementController
 {
-    public void FixedUpdate()
+    public override void FixedUpdate()
     {
-        UpdateHorizontalMovement();
-        UpdateJumpMovement();
-    }
+        base.FixedUpdate();
 
-    void UpdateHorizontalMovement()
-    {
-        // horizontal acceleration
+        // lateral movement input
         float inputX = Input.GetAxis("Horizontal");
-        if(rb.velocity.magnitude < player.SPEED_MAX)
-        {
-            rb.AddForce(Vector2.right * inputX * player.ACCELERATION_RATE);
-        }
-    }
+        LateralMove(inputX * player.LATERAL_ACCELERATION * Time.fixedDeltaTime);
 
-    void UpdateJumpMovement()
-    {
-        // jump mechanics
-        if(player.isGrounded)
+        // jump input
+        if(player.isGrounded && Input.GetKey(KeyCode.Space) && jumpCharges > 0)
         {
-            float inputJump = Input.GetAxis("Jump");
-            rb.velocity = rb.velocity + (Vector2) transform.up * inputJump * player.JUMP_SPEED;
+            Jump();
         }
-    }
-
-    public override void OnDragStart(DragInfo drag)
-    {
-        // start time slow while aiming launch
-        Time.timeScale = 0.5f; // placeholder, TODO: create central time manager so multiple entities can interact with time while managing conflicts 
-    }
-
-    public override void OnDragEnd(DragInfo drag)
-    {
-        // end time slow
-        Time.timeScale = 1f; // placeholder, TODO: create central time manager so multiple entities can interact with time while managing conflicts 
-        if(player.launchCharges > 0)
-        {
-            Launch(drag.start - drag.end);
-            player.launchCharges--;
-        }
-        Debug.Log("drag end");
     }
 }
