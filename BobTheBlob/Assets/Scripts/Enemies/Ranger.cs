@@ -120,15 +120,19 @@ public class Ranger : Enemy
     {
         moveForce = maxStateForces[(int)state];
         // Try to keep the player at a distance while attacking
-        if(Detect(2*(detectionRange * detectionRange)))
+        if (!Detect(detectionRange * detectionRange))
         {
-            // Player out of range
-            state = State.Patrolling;
-        }
-        else
-        {
-            // Stay put and keep firing
-            moveForce = 0;
+            if (Detect(2 * (detectionRange * detectionRange)))
+            {
+                // Player out of range
+                state = State.Patrolling;
+                return;
+            }
+            else
+            {
+                // Stay put and keep firing
+                moveForce = 0;
+            }
         }
 
         if (remainingCooldownTime <= 0)
