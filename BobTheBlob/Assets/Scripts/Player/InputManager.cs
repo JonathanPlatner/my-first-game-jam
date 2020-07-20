@@ -1,74 +1,32 @@
-﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class InputManager : MonoBehaviour
 {
     [SerializeField]
-    private KeyCode up = KeyCode.W;
+    private Inputs.Button action = new Inputs.Button(KeyCode.Mouse0);
     [SerializeField]
-    private KeyCode right = KeyCode.D;
+    private Inputs.Button cancel = new Inputs.Button(KeyCode.Mouse1);
     [SerializeField]
-    private KeyCode down = KeyCode.S;
+    private Inputs.Axis lateral = new Inputs.Axis(new KeyCode[] { KeyCode.D, KeyCode.RightArrow }, new KeyCode[] { KeyCode.A, KeyCode.LeftArrow });
     [SerializeField]
-    private KeyCode left = KeyCode.A;
+    private Inputs.Axis longitudinal = new Inputs.Axis(new KeyCode[] { KeyCode.W, KeyCode.UpArrow }, new KeyCode[] { KeyCode.S, KeyCode.DownArrow });
     [SerializeField]
-    private KeyCode grab = KeyCode.Space;
+    private Inputs.Button grab = new Inputs.Button(KeyCode.Space);
     [SerializeField]
-    private KeyCode shootMode = KeyCode.E;
+    private Inputs.Button cannon = new Inputs.Button(KeyCode.E);
     [SerializeField]
-    private KeyCode blockMode = KeyCode.Q;
+    private Inputs.Button shield = new Inputs.Button(KeyCode.Q);
     [SerializeField]
-    private int actionButton = 0;
+    private Inputs.Button test = new Inputs.Button(KeyCode.Tab);
 
-    public Vector2 Move { get; private set; }
-    public bool Grab { get; private set; }
-    public bool GrabOS { get; private set; }
-    public bool ShootMode { get; private set; }
-    public bool ShootModeOS { get; private set; }
-    public bool BlockMode { get; private set; }
-    public bool BlockModeOS { get; private set; }
-    public bool Action { get; private set; }
-    public bool ActionOS { get; private set; }
-    public bool ActionOffOS { get; private set; }
-    public Vector2 MousePosition { get; private set; }
+    public Inputs.Button Action { get { return action; } }
+    public Inputs.Button Cancel { get { return cancel; } }
+    public Inputs.Axis Lateral { get { return lateral; } }
+    public Inputs.Axis Longitudinal { get { return longitudinal; } }
+    public Inputs.Button Grab { get { return grab; } }
+    public Inputs.Button Cannon { get { return cannon; } }
+    public Inputs.Button Shield { get { return shield; } }
+    public Inputs.Button Test { get { return test; } }
+    public Inputs.Mouse Mouse { get; } = new Inputs.Mouse();
 
-    private Camera mainCam;
-
-    private void Start()
-    {
-        mainCam = Camera.main;
-    }
-
-    private void Update()
-    {
-        // Move
-        Vector2 moveVec = Vector2.zero;
-        if(Input.GetKey(up)) moveVec.y++;
-        if(Input.GetKey(down)) moveVec.y--;
-        if(Input.GetKey(right)) moveVec.x++;
-        if(Input.GetKey(left)) moveVec.x--;
-        Move = moveVec;
-
-        // Grab
-        Grab = Input.GetKey(grab);
-        GrabOS = Input.GetKeyDown(grab);
-
-        // Block Mode and Shoot Mode
-        BlockMode = Input.GetKey(blockMode);
-        BlockModeOS = Input.GetKeyDown(blockMode);
-
-        ShootMode = Input.GetKey(shootMode) && !Input.GetKey(blockMode);
-        ShootModeOS = Input.GetKeyDown(shootMode) && !Input.GetKey(blockMode);
-
-        // Action
-        Action = Input.GetMouseButton(actionButton);
-        ActionOS = Input.GetMouseButtonDown(actionButton);
-        ActionOffOS = Input.GetMouseButtonUp(actionButton);
-       
-
-        // Mouse Position
-        MousePosition = mainCam.ScreenToWorldPoint(Input.mousePosition);
-
-    }
 }
