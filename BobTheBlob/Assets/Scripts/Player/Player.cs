@@ -67,10 +67,10 @@ public class Player : MonoBehaviour
             Debug.Log("Down");
         }
         
-        if(im.Grab.Down() && mode == Mode.Sticky)
-        {
-            ToBouncy();
-        }
+        //if(im.Grab.Down() && mode == Mode.Sticky)
+        //{
+        //    ToBouncy();
+        //}
         actionTransform.rotation = Quaternion.Euler(0, 0, mouseAngle * Mathf.Rad2Deg);
 
         if(im.Action.Down() && !im.Cannon.Active() && !im.Shield.Active() && jumps < maxJumps && !dragging)
@@ -104,7 +104,7 @@ public class Player : MonoBehaviour
         rb.sharedMaterial = sticky;
         if(fast)
         {
-            anim.SetBool("QuickSticky", true);
+            anim.SetBool("Sticky", true);
         }
         else
         {
@@ -173,5 +173,12 @@ public class Player : MonoBehaviour
             float rotation = Mathf.Atan2(normal.y, normal.x) * Mathf.Rad2Deg;
             transform.rotation = Quaternion.Euler(0, 0, rotation - 90);
         }
+        //if(collision.transform.tag == "Ground" && im.Grab.Down() && mode == Mode.Sticky)
+        //{
+        //    ToBouncy();
+        //    //Vector2 normal = collision.GetContact(0).normal;
+        //    //float rotation = Mathf.Atan2(normal.y, normal.x) * Mathf.Rad2Deg;
+        //    //transform.rotation = Quaternion.Euler(0, 0, rotation - 90);
+        //}
     }
 }
