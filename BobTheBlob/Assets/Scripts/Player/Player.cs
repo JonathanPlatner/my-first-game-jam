@@ -45,6 +45,9 @@ public class Player : MonoBehaviour
     private float maxVelocity = 5f;
     private Vector2 velocity;
 
+    [SerializeField]
+    private Animator anim;
+
 
     private Vector2 dragPosition;
     private Camera playerCam;
@@ -89,13 +92,26 @@ public class Player : MonoBehaviour
         mode = Mode.Bouncy;
         rb.gravityScale = 1;
         rb.sharedMaterial = bouncy;
+        anim.SetBool("Bouncy", true);
+        anim.SetBool("Sticky", false);
+        anim.SetBool("QuickSticky",false);
     }
-    private void ToSticky()
+    private void ToSticky(bool fast)
     {
         mode = Mode.Sticky;
         rb.gravityScale = 0;
         rb.velocity = Vector2.zero;
         rb.sharedMaterial = sticky;
+        if(fast)
+        {
+            anim.SetBool("QuickSticky", true);
+        }
+        else
+        {
+            anim.SetBool("Sticky", true);
+        }
+        anim.SetBool("Bouncy", false);
+        
     }
 
     private void FixedUpdate()
@@ -140,7 +156,7 @@ public class Player : MonoBehaviour
         jumps = 0;
         if(collision.transform.tag == "Ground" && im.Grab.Active())
         {
-            ToSticky();
+            ToSticky(true);
             Vector2 normal = collision.GetContact(0).normal;
             float rotation = Mathf.Atan2(normal.y, normal.x) * Mathf.Rad2Deg;
             transform.rotation = Quaternion.Euler(0, 0, rotation - 90);
@@ -150,9 +166,9 @@ public class Player : MonoBehaviour
     private void OnCollisionStay2D(Collision2D collision)
     {
         jumps = 0;
-        if(collision.transform.tag == "Ground" && im.Grab.Active())
+        if(collision.transform.tag == "Ground" && im.Grab.Down() && mode != Mode.Sticky)
         {
-            ToSticky();
+            ToSticky(false);
             Vector2 normal = collision.GetContact(0).normal;
             float rotation = Mathf.Atan2(normal.y, normal.x) * Mathf.Rad2Deg;
             transform.rotation = Quaternion.Euler(0, 0, rotation - 90);
