@@ -109,7 +109,7 @@ public class Ranger : Enemy
         moveForce = maxStateForces[(int)state];
         if (facing == Direction.Left) moveForce *= -1;
 
-        if (Detect())
+        if (Detect(detectionRange * detectionRange))
         {
             state = State.Attacking;
             return;
@@ -118,20 +118,32 @@ public class Ranger : Enemy
 
     private void Attack()
     {
-        //float distToPlayerSqr = (rb.position - (Vector2)target.position).sqrMagnitude;
         moveForce = maxStateForces[(int)state];
+        // Try to keep the player at a distance while attacking
+        if(Detect(2*(detectionRange * detectionRange)))
+        {
+            // Player out of range
+            state = State.Patrolling;
+        }
+        else
+        {
+            // Stay put and keep firing
+            moveForce = 0;
+        }
+
         if (remainingCooldownTime <= 0)
         {
+            // Shoot
             Instantiate(projectile, shotPoint.position, Quaternion.identity);
             remainingCooldownTime = cooldownTime;
         }
     }
 
-    private bool Detect()
+    private bool Detect(float rangeSqr)
     {
         if (target != null)
         {
-            if ((rb.position - (Vector2)target.position).sqrMagnitude <= detectionRange * detectionRange)
+            if ((rb.position - (Vector2)target.position).sqrMagnitude <= rangeSqr)
             {
                 float x = facing == Direction.Left ? rb.position.x - target.position.x : target.position.x - rb.position.x;
                 float y = target.position.y - rb.position.y;
