@@ -33,9 +33,13 @@ public class PlayerController : MonoBehaviour
     public int MAX_LAUNCH_CHARGES = 1;
     public float MAX_LAUNCH_SPEED = 30f;
 
+    // shoot config
+    public float SHOOT_COOLDOWN;
+    public float SHOOT_SPEED;
+    public Transform PROJECTILE_PREFAB;
 
 
-    public enum PlayerState { Bouncy, Sticky }
+    public enum PlayerState { Bouncy, Sticky, Cannon, Shield }
     PlayerState currentState;
     MovementController movementController;
     public bool isGrounded;
@@ -51,10 +55,13 @@ public class PlayerController : MonoBehaviour
 
         switch (nextState) {
             case PlayerState.Bouncy:
-                movementController= gameObject.AddComponent<BouncyMovementController>();
+                movementController = gameObject.AddComponent<BouncyMovementController>();
                 break;
             case PlayerState.Sticky:
-                movementController= gameObject.AddComponent<StickyMovementController>();
+                movementController = gameObject.AddComponent<StickyMovementController>();
+                break;
+            case PlayerState.Cannon:
+                movementController = gameObject.AddComponent<CannonMovementController>();
                 break;
         }
 
@@ -88,9 +95,20 @@ public class PlayerController : MonoBehaviour
         // mode switching
         if(Input.GetKeyDown(KeyCode.E))
         {
-            if(currentState == PlayerState.Sticky)
+            if(currentState != PlayerState.Sticky)
             {
                 ChangeState(PlayerState.Sticky);
+            } else
+            {
+                ChangeState(PlayerState.Bouncy);
+            }
+        }
+
+        if(Input.GetKeyDown(KeyCode.R))
+        {
+            if(currentState != PlayerState.Cannon)
+            {
+                ChangeState(PlayerState.Cannon);
             } else
             {
                 ChangeState(PlayerState.Bouncy);
@@ -188,7 +206,6 @@ public class PlayerController : MonoBehaviour
             dragging = true;
             currentDragInfo = new DragInfo(Input.mousePosition);
             movementController.OnDragStart(currentDragInfo);
-            Time.timeScale = 0.5f; // placeholder, TODO: create central time manager so multiple entities can interact with time while managing conflicts 
         }
 
         // drag ended
@@ -197,7 +214,6 @@ public class PlayerController : MonoBehaviour
             dragging = false;
             currentDragInfo.end = Input.mousePosition;
             movementController.OnDragEnd(currentDragInfo);
-            Time.timeScale = 1f; // placeholder, TODO: create central time manager so multiple entities can interact with time while managing conflicts 
         }
     }
 }

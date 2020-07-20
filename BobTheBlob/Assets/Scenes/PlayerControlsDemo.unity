@@ -452,7 +452,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1212524859}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.3001099, y: -2.6462529, z: 0}
+  m_LocalPosition: {x: 1.39, y: -3.85, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 136932323}
@@ -578,6 +578,10 @@ MonoBehaviour:
   FALL_TIME: 0.2
   MAX_LAUNCH_CHARGES: 1
   MAX_LAUNCH_SPEED: 30
+  SHOOT_COOLDOWN: 0.4
+  SHOOT_SPEED: 15
+  PROJECTILE_PREFAB: {fileID: 3360866110766688237, guid: 92bbedb31e58a354c8ce1ed878f8cb3b,
+    type: 3}
   isGrounded: 0
   groundLayer:
     serializedVersion: 2
