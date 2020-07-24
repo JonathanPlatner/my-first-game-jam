@@ -67,7 +67,7 @@ public class Player : MonoBehaviour
     [SerializeField]
     private GameObject bullet;
 
-
+    private int collisionCount;
 
     private void Start()
     {
@@ -126,7 +126,36 @@ public class Player : MonoBehaviour
             CancelDrag();
         }
         moveVector = new Vector2(im.Lateral.Value(), im.Longitudinal.Value());
-        
+
+        if (mode == Mode.Sticky)
+        {
+            RaycastHit2D hit = Physics2D.Raycast(rb.position, -normal, 0.4f);
+            Debug.DrawRay(rb.position, -normal * 0.4f);
+            if (hit.collider != null)
+            {
+                if(hit.collider.tag == "Ground")
+                {
+                    Debug.Log("hit");
+                }
+                else
+                {
+                    Debug.Log("no hit");
+                    ToBouncy();
+                }
+                
+            }
+            else
+            {
+                Debug.Log("no hit");
+                ToBouncy();
+            }
+            
+        }
+        //if(collisionCount <= 0)
+        //{
+        //    collisionCount = 0;
+        //    ToBouncy();
+        //}
     }
 
     private void ToBouncy()
@@ -134,9 +163,11 @@ public class Player : MonoBehaviour
         mode = Mode.Bouncy;
         rb.gravityScale = 1;
         rb.sharedMaterial = bouncy;
+        rb.velocity = velocity;
         anim.SetBool("Bouncy", true);
         anim.SetBool("Sticky", false);
         anim.SetBool("QuickSticky", false);
+        
     }
     private void ToSticky(bool fast)
     {
@@ -169,7 +200,7 @@ public class Player : MonoBehaviour
         {
             Vector2 tangent = new Vector2(-normal.y, normal.x);
             Vector2 velocity = Vector2.Dot(moveVector, tangent) * tangent;
-            rb.MovePosition(rb.position + velocity * Time.deltaTime);
+            rb.MovePosition(rb.position + velocity * Time.deltaTime * 1.8f);
         }
     }
 
@@ -212,12 +243,16 @@ public class Player : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         jumps = 0;
-        if(collision.transform.tag == "Ground" && im.Grab.Active())
+        if(collision.transform.tag == "Ground")
         {
-            ToSticky(true);
-            normal = collision.GetContact(0).normal;
-            float rotation = Mathf.Atan2(normal.y, normal.x) * Mathf.Rad2Deg;
-            transform.rotation = Quaternion.Euler(0, 0, rotation - 90);
+            collisionCount++;
+            if(im.Grab.Active())
+            {
+                ToSticky(true);
+                normal = collision.GetContact(0).normal;
+                float rotation = Mathf.Atan2(normal.y, normal.x) * Mathf.Rad2Deg;
+                transform.rotation = Quaternion.Euler(0, 0, rotation - 90);
+            }
         }
     }
 
@@ -245,11 +280,11 @@ public class Player : MonoBehaviour
         //}
     }
 
-    //private void OnCollisionExit2D(Collision2D collision)
-    //{
-    //    if(collision.transform.tag == "Ground")
-    //    {
-    //        ToBouncy();
-    //    }
-    //}
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        if(collision.transform.tag == "Ground")
+        {
+            collisionCount--;
+        }
+    }
 }
