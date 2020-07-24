@@ -14,6 +14,12 @@ public class Player : MonoBehaviour
     private PhysicsMaterial2D sticky;
     [SerializeField]
     private Transform actionTransform;
+    [SerializeField]
+    private Transform arrowTransform;
+    [SerializeField]
+    private Transform shieldTransform;
+    [SerializeField]
+    private Transform cannonTransform;
 
     private float actionAngle;
     //[SerializeField]
@@ -52,6 +58,17 @@ public class Player : MonoBehaviour
     private Vector2 dragPosition;
     private Camera playerCam;
 
+    private bool stickyToggle;
+    private bool delayInput;
+
+    private Vector2 normal = Vector2.zero;
+    private Vector2 moveVector;
+
+    [SerializeField]
+    private GameObject bullet;
+
+
+
     private void Start()
     {
         ToBouncy();
@@ -66,13 +83,36 @@ public class Player : MonoBehaviour
         {
             Debug.Log("Down");
         }
-        
-        //if(im.Grab.Down() && mode == Mode.Sticky)
-        //{
-        //    ToBouncy();
-        //}
-        actionTransform.rotation = Quaternion.Euler(0, 0, mouseAngle * Mathf.Rad2Deg);
 
+        if(im.Grab.Up() && mode == Mode.Sticky)
+        {
+            ToBouncy();
+        }
+
+        actionTransform.rotation = Quaternion.Euler(0, 0, mouseAngle * Mathf.Rad2Deg);
+        if(im.Cannon.Active())
+        {
+            cannonTransform.gameObject.SetActive(true);
+            shieldTransform.gameObject.SetActive(false);
+            arrowTransform.gameObject.SetActive(false);
+        }
+        else if(im.Shield.Active())
+        {
+            cannonTransform.gameObject.SetActive(false);
+            shieldTransform.gameObject.SetActive(true);
+            arrowTransform.gameObject.SetActive(false);
+        }
+        else
+        {
+            cannonTransform.gameObject.SetActive(false);
+            shieldTransform.gameObject.SetActive(false);
+            arrowTransform.gameObject.SetActive(true);
+        }
+
+        if (im.Action.Down() && im.Cannon.Active())
+        {
+            Shoot();
+        }
         if(im.Action.Down() && !im.Cannon.Active() && !im.Shield.Active() && jumps < maxJumps && !dragging)
         {
             StartDrag();
@@ -85,6 +125,8 @@ public class Player : MonoBehaviour
         {
             CancelDrag();
         }
+        moveVector = new Vector2(im.Lateral.Value(), im.Longitudinal.Value());
+        
     }
 
     private void ToBouncy()
@@ -94,7 +136,7 @@ public class Player : MonoBehaviour
         rb.sharedMaterial = bouncy;
         anim.SetBool("Bouncy", true);
         anim.SetBool("Sticky", false);
-        anim.SetBool("QuickSticky",false);
+        anim.SetBool("QuickSticky", false);
     }
     private void ToSticky(bool fast)
     {
@@ -111,7 +153,7 @@ public class Player : MonoBehaviour
             anim.SetBool("Sticky", true);
         }
         anim.SetBool("Bouncy", false);
-        
+
     }
 
     private void FixedUpdate()
@@ -121,6 +163,13 @@ public class Player : MonoBehaviour
         if(mode == Mode.Bouncy)
         {
             rb.AddForce(bounceControl * im.Lateral.Value() * Vector2.right);
+        }
+
+        if(mode == Mode.Sticky)
+        {
+            Vector2 tangent = new Vector2(-normal.y, normal.x);
+            Vector2 velocity = Vector2.Dot(moveVector, tangent) * tangent;
+            rb.MovePosition(rb.position + velocity * Time.deltaTime);
         }
     }
 
@@ -134,16 +183,25 @@ public class Player : MonoBehaviour
 
     private void EndDrag()
     {
-        Time.timeScale = 1;
-        Time.fixedDeltaTime = defaultFixedDeltaTime;
-        jumps++;
-        ToBouncy();
-        dragging = false;
         Vector2 dragVector = im.Mouse.World(playerCam) - dragPosition;
-        rb.velocity = Vector2.ClampMagnitude(dragVector, maxLaunchPower) * launchPowerScale + rb.velocity * Mathf.Clamp01(Vector2.Dot(rb.velocity.normalized, dragVector));
-        
-    }
+        if(dragVector.magnitude > 0.1f)
+        {
+            Time.timeScale = 1;
+            Time.fixedDeltaTime = defaultFixedDeltaTime;
+            jumps++;
+            ToBouncy();
+            dragging = false;
 
+            rb.velocity = Vector2.ClampMagnitude(dragVector, maxLaunchPower) * launchPowerScale + rb.velocity * Mathf.Clamp01(Vector2.Dot(rb.velocity.normalized, dragVector));
+        }
+
+    }
+    private void Shoot()
+    {
+        Debug.Log("shoot");
+        GameObject go_bullet = Instantiate(bullet, cannonTransform.position, Quaternion.identity);
+        go_bullet.GetComponent<Rigidbody2D>().AddForce(cannonTransform.up * 20);
+    }
     private void CancelDrag()
     {
         dragging = false;
@@ -157,7 +215,7 @@ public class Player : MonoBehaviour
         if(collision.transform.tag == "Ground" && im.Grab.Active())
         {
             ToSticky(true);
-            Vector2 normal = collision.GetContact(0).normal;
+            normal = collision.GetContact(0).normal;
             float rotation = Mathf.Atan2(normal.y, normal.x) * Mathf.Rad2Deg;
             transform.rotation = Quaternion.Euler(0, 0, rotation - 90);
         }
@@ -166,19 +224,32 @@ public class Player : MonoBehaviour
     private void OnCollisionStay2D(Collision2D collision)
     {
         jumps = 0;
-        if(collision.transform.tag == "Ground" && im.Grab.Down() && mode != Mode.Sticky)
+        if(collision.transform.tag == "Ground" && im.Grab.Active())
         {
-            ToSticky(false);
-            Vector2 normal = collision.GetContact(0).normal;
-            float rotation = Mathf.Atan2(normal.y, normal.x) * Mathf.Rad2Deg;
-            transform.rotation = Quaternion.Euler(0, 0, rotation - 90);
+            if(Vector2.Dot(rb.velocity, normal) < 0)
+            {
+                ToSticky(false);
+                normal = collision.GetContact(0).normal;
+                float rotation = Mathf.Atan2(normal.y, normal.x) * Mathf.Rad2Deg;
+                transform.rotation = Quaternion.Euler(0, 0, rotation - 90);
+            }
+            //delayInput = false;
         }
-        //if(collision.transform.tag == "Ground" && im.Grab.Down() && mode == Mode.Sticky)
+        //else if(collision.transform.tag == "Ground" && im.Grab.Active() && mode == Mode.Sticky && delayInput)
         //{
         //    ToBouncy();
-        //    //Vector2 normal = collision.GetContact(0).normal;
-        //    //float rotation = Mathf.Atan2(normal.y, normal.x) * Mathf.Rad2Deg;
-        //    //transform.rotation = Quaternion.Euler(0, 0, rotation - 90);
+        //    Vector2 normal = collision.GetContact(0).normal;
+        //    float rotation = Mathf.Atan2(normal.y, normal.x) * Mathf.Rad2Deg;
+        //    transform.rotation = Quaternion.Euler(0, 0, rotation - 90);
+        //    delayInput = false;
         //}
     }
+
+    //private void OnCollisionExit2D(Collision2D collision)
+    //{
+    //    if(collision.transform.tag == "Ground")
+    //    {
+    //        ToBouncy();
+    //    }
+    //}
 }
