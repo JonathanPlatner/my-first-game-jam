@@ -8,6 +8,7 @@ public class Charger : Enemy
 {
     private new string name = "Charger";
     public override string Name { get { return name; } }
+    public override int MaxHealth { get { return 10; } }
 
     private Transform target;
     public override Transform Target { get { return target; } }
@@ -96,7 +97,10 @@ public class Charger : Enemy
             ResetTimers();
             justTransitioned = false;
         }
-
+        if(Dead())
+        {
+            Destroy(gameObject);
+        }
         //Debug.Log(state);
         //Swing();
 
@@ -370,5 +374,25 @@ public class Charger : Enemy
             return true;
         }
         return false;
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if(collision.collider.tag == "Player")
+        {
+            Player player = collision.transform.GetComponent<Player>();
+            Vector2 toPlayer = (Vector2)player.transform.position - rb.position;
+            float velocityComponentTowardEnemy = Vector2.Dot(player.Velocity - rb.velocity, toPlayer) / toPlayer.magnitude;
+            if (velocityComponentTowardEnemy > 2)
+            {
+
+                player.Bounce(Vector2.up * velocityComponentTowardEnemy + player.Velocity.x * Vector2.right);
+                TakeDamage((int)(velocityComponentTowardEnemy / 2));
+            }
+        }
+        else if (collision.collider.tag == "PlayerBullet")
+        {
+            TakeDamage(2);
+        }
     }
 }

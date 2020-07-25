@@ -6,7 +6,7 @@ public class Ranger : Enemy
 {
     private new string name = "Ranger";
     public override string Name { get { return name; } }
-
+    public override int MaxHealth { get { return 10; } }
     private Transform target;
     public override Transform Target { get { return target; } }
 
@@ -47,7 +47,7 @@ public class Ranger : Enemy
         {
             target = GameObject.FindGameObjectWithTag("Player").transform;
         }
-        catch (NullReferenceException e)
+        catch(NullReferenceException e)
         {
             Debug.LogWarning(e.Message);
         }
@@ -57,7 +57,7 @@ public class Ranger : Enemy
         maxStateForces = new float[Enum.GetNames(typeof(State)).Length];
         enemySprite = gameObject.GetComponent<SpriteRenderer>();
 
-        for (int i = 0; i < Mathf.Min(maxStateForces.Length, maxForces.Length); i++)
+        for(int i = 0; i < Mathf.Min(maxStateForces.Length, maxForces.Length); i++)
         {
             maxStateForces[i] = maxForces[i];
         }
@@ -71,7 +71,7 @@ public class Ranger : Enemy
 
     private void Update()
     {
-        switch (state)
+        switch(state)
         {
             case State.Patrolling:
                 Patrol();
@@ -81,9 +81,9 @@ public class Ranger : Enemy
                 break;
         }
 
-        if (LedgeDetect())
+        if(LedgeDetect())
         {
-            switch (state)
+            switch(state)
             {
                 case State.Patrolling:
                     Direction newDirection = facing == Direction.Right || rb.velocity.x > 0 ? Direction.Left : Direction.Right;
@@ -107,9 +107,9 @@ public class Ranger : Enemy
     private void Patrol()
     {
         moveForce = maxStateForces[(int)state];
-        if (facing == Direction.Left) moveForce *= -1;
+        if(facing == Direction.Left) moveForce *= -1;
 
-        if (Detect(detectionRange * detectionRange))
+        if(Detect(detectionRange * detectionRange))
         {
             state = State.Attacking;
             return;
@@ -120,9 +120,9 @@ public class Ranger : Enemy
     {
         moveForce = maxStateForces[(int)state];
         // Try to keep the player at a distance while attacking
-        if (!Detect(detectionRange * detectionRange))
+        if(!Detect(detectionRange * detectionRange))
         {
-            if (Detect(2 * (detectionRange * detectionRange)))
+            if(Detect(2 * (detectionRange * detectionRange)))
             {
                 // Player out of range
                 state = State.Patrolling;
@@ -135,7 +135,7 @@ public class Ranger : Enemy
             }
         }
 
-        if (remainingCooldownTime <= 0)
+        if(remainingCooldownTime <= 0)
         {
             // Shoot
             remainingCooldownTime = cooldownTime;
@@ -146,16 +146,16 @@ public class Ranger : Enemy
 
     private bool Detect(float rangeSqr)
     {
-        if (target != null)
+        if(target != null)
         {
-            if ((rb.position - (Vector2)target.position).sqrMagnitude <= rangeSqr)
+            if((rb.position - (Vector2)target.position).sqrMagnitude <= rangeSqr)
             {
                 float x = facing == Direction.Left ? rb.position.x - target.position.x : target.position.x - rb.position.x;
                 float y = target.position.y - rb.position.y;
-                if (y < x * detectionSlope && y > 0)
+                if(y < x * detectionSlope && y > 0)
                 {
                     RaycastHit2D hit = Physics2D.Raycast(rb.position, (Vector2)target.position - rb.position);
-                    if (hit.collider.tag == "Player")
+                    if(hit.collider.tag == "Player")
                     {
                         Debug.DrawLine(rb.position, hit.point, Color.red);
                         return true;
@@ -171,7 +171,7 @@ public class Ranger : Enemy
                     Debug.DrawLine(rb.position, target.position, Color.red);
                 }
 
-            }      
+            }
         }
         return false;
     }
@@ -188,17 +188,28 @@ public class Ranger : Enemy
         Direction movingDirection = rb.velocity.x < 0 ? Direction.Left : Direction.Right;
         RaycastHit2D hit = Physics2D.Raycast(rb.position + (movingDirection == Direction.Left ? Vector2.left : Vector2.right), Vector2.down, 0.5f);
         //Debug.DrawRay(rb.position + (movingDirection == Direction.Left ? Vector2.left : Vector2.right), Vector2.down * 0.5f);
-        if (hit.collider != null)
+        if(hit.collider != null)
         {
-            if (hit.collider.tag != "Ground")
+            if(hit.collider.tag != "Ground")
             {
                 return true;
             }
         }
-        else if (hit.collider == null)
+        else if(hit.collider == null)
         {
             return true;
         }
         return false;
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if(collision.collider.tag == "Player")
+        {
+            Player player = collision.transform.GetComponent<Player>();
+            Vector2 toPlayer = (Vector2)player.transform.position - rb.position;
+            float velocityComponentTowardEnemy = Vector2.Dot(player.Velocity - rb.velocity, toPlayer) / toPlayer.magnitude;
+            Debug.Log(velocityComponentTowardEnemy);
+        }
     }
 }

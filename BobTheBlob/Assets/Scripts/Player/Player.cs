@@ -69,6 +69,8 @@ public class Player : MonoBehaviour
 
     private int collisionCount;
 
+    public Vector2 Velocity { get { return rb.velocity; } }
+
     private void Start()
     {
         ToBouncy();
@@ -135,18 +137,18 @@ public class Player : MonoBehaviour
             {
                 if(hit.collider.tag == "Ground")
                 {
-                    Debug.Log("hit");
+                    //Debug.Log("hit");
                 }
                 else
                 {
-                    Debug.Log("no hit");
+                    //Debug.Log("no hit");
                     ToBouncy();
                 }
                 
             }
             else
             {
-                Debug.Log("no hit");
+                //Debug.Log("no hit");
                 ToBouncy();
             }
             
@@ -157,7 +159,10 @@ public class Player : MonoBehaviour
         //    ToBouncy();
         //}
     }
-
+    public void Bounce(Vector2 velocity)
+    {
+        rb.velocity = velocity;
+    }
     private void ToBouncy()
     {
         mode = Mode.Bouncy;
