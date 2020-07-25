@@ -28,6 +28,7 @@ public class PlayerController : MonoBehaviour
     public float JUMP_SPEED { get; private set; }
     public float JUMP_GRAVITY { get; private set; }
     public float FALL_GRAVITY { get; private set; }
+    public float MAX_FALL_SPEED = 10f;
 
     //launch config
     public int MAX_LAUNCH_CHARGES = 1;
@@ -65,6 +66,7 @@ public class PlayerController : MonoBehaviour
                 break;
         }
 
+        currentState = nextState;
         movementController.OnEnterState();
     }
 
@@ -73,7 +75,7 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         ChangeState(PlayerState.Bouncy);
         isGrounded = false;
-        GROUND_COOLDOWN = Time.fixedDeltaTime * 1.5f;
+        GROUND_COOLDOWN = Time.fixedDeltaTime * 5f;
 
         //initialize horizontal movement variables
         LATERAL_DRAG = LATERAL_MAX_SPEED / LATERAL_STOP_TIME;

@@ -1,5 +1,7 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -71,6 +73,11 @@ public class MovementController: MonoBehaviour{
                 }
                 break;
         }
+
+        if(rb.velocity.y < -player.MAX_FALL_SPEED)
+        {
+            rb.velocity = new Vector2(rb.velocity.x, -player.MAX_FALL_SPEED);
+        }
     }
     public virtual void Jump()
     {
@@ -84,6 +91,7 @@ public class MovementController: MonoBehaviour{
     public int launchCharges = 1;
     public void Launch(Vector2 dir)
     {
+        Debug.DrawRay(transform.position, dir,Color.white,5f);
         rb.velocity += dir.normalized * Mathf.Min(player.MAX_LAUNCH_SPEED, dir.magnitude);
 
         player.ForceUngrounded();
@@ -91,8 +99,16 @@ public class MovementController: MonoBehaviour{
 
     void UpdateLateralMovement()
     {
-        // apply drag
+        if(Mathf.Abs(Input.GetAxis("Horizontal")) > 0.001f || !player.isGrounded) { return; }
+
         float lateralSpeed = Vector2.Dot(transform.right, rb.velocity);
+        float verticalSpeed = Vector2.Dot(transform.up, rb.velocity);
+        if(lateralSpeed > player.LATERAL_MAX_SPEED)
+        {
+            rb.velocity = transform.up * verticalSpeed + transform.right * player.LATERAL_MAX_SPEED;
+        }
+
+        // apply drag
         int sign = lateralSpeed > 0f ? -1 : 1;
         float dx = Mathf.Min(Mathf.Abs(lateralSpeed), player.LATERAL_DRAG * Time.fixedDeltaTime);
         rb.velocity += (Vector2)transform.right * sign * dx;
@@ -111,13 +127,16 @@ public class MovementController: MonoBehaviour{
             {
                 sign = dot > 0f ? 1 : -1;
             }
-            rb.velocity += sign * (Vector2) transform.right * vx;
+            rb.velocity += sign * (Vector2)transform.right * vx;
         }
     }
 
     public virtual void OnGroundedEnter() {
         jumpCharges = 1;
         launchCharges = player.MAX_LAUNCH_CHARGES;
+
+        // slow lateral movement
+        rb.velocity = transform.up * Vector2.Dot(transform.up, rb.velocity) * 0.5f;
     }
     public virtual void OnGroundedExit() { }
 

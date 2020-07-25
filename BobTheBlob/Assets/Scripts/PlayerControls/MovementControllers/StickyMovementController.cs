@@ -32,16 +32,20 @@ public class StickyMovementController : MovementController {
         float inputX = Input.GetAxis("Horizontal");
         LateralMove(inputX * player.LATERAL_ACCELERATION * Time.fixedDeltaTime);
 
-        // jump input
-        if(player.isGrounded && Input.GetKey(KeyCode.Space) && jumpCharges > 0)
-        {
-            Jump();
-        }
 
         // reset rotation if not sticking to anything
         if(!player.isGrounded && transform.rotation != Quaternion.identity)
         {
             ResetRotation();
+        }
+    }
+
+    public void Update()
+    {
+        // jump input
+        if(player.isGrounded && Input.GetKeyDown(KeyCode.Space) && jumpCharges > 0)
+        {
+            Jump();
         }
     }
 

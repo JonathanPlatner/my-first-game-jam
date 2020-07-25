@@ -13,8 +13,12 @@ public class BouncyMovementController : MovementController
         float inputX = Input.GetAxis("Horizontal");
         LateralMove(inputX * player.LATERAL_ACCELERATION * Time.fixedDeltaTime);
 
+    }
+
+    public void Update()
+    {
         // jump input
-        if(player.isGrounded && Input.GetKey(KeyCode.Space) && jumpCharges > 0)
+        if(player.isGrounded && Input.GetKeyDown(KeyCode.Space) && jumpCharges > 0)
         {
             Jump();
         }

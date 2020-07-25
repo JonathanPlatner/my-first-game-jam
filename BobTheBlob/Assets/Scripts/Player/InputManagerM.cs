@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class InputManager : MonoBehaviour
+public class InputManagerM : MonoBehaviour
 {
     [SerializeField]
     private KeyCode up = KeyCode.W;

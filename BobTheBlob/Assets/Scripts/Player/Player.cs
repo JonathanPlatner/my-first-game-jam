@@ -20,7 +20,7 @@ public class Player : MonoBehaviour
     //private bool bounce;
 
     [SerializeField]
-    private InputManager input;
+    private InputManagerM input;
 
     private float mouseAngle;
     private Vector2 unitMousePosition;
