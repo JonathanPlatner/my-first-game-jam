@@ -138,8 +138,9 @@ public class Ranger : Enemy
         if (remainingCooldownTime <= 0)
         {
             // Shoot
-            Instantiate(projectile, shotPoint.position, Quaternion.identity);
             remainingCooldownTime = cooldownTime;
+            GameObject bullet = Instantiate(projectile, shotPoint.position, Quaternion.identity);
+            bullet.GetComponent<Rigidbody2D>().AddForce(shotPoint.up * 300);
         }
     }
 
