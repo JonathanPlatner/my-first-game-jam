@@ -260,14 +260,6 @@ public class Charger : Enemy
 
     private bool Detect()
     {
-        //Debug.DrawLine(rb.position, rb.position +
-        //    (facing == Facing.Left ? Vector2.left : Vector2.right) * detectionXValue +
-        //    Vector2.up * detectionSlope * detectionXValue);
-
-        //Debug.DrawLine(rb.position, rb.position +
-        //   (facing == Facing.Left ? Vector2.left : Vector2.right) * detectionXValue +
-        //   Vector2.down * detectionSlope * detectionXValue);
-
         if(target != null)
         {
             if((rb.position - (Vector2)target.position).sqrMagnitude <= detectionRange * detectionRange)
@@ -277,12 +269,8 @@ public class Charger : Enemy
                 if(y < x * detectionSlope && y > 0)
                 {
                     RaycastHit2D hit = Physics2D.Raycast(rb.position, (Vector2)target.position - rb.position);
-                    //Debug.Log(hit.transform.tag);
-                    //Debug.DrawRay(rb.position, (Vector2)target.position - rb.position);
                     if(hit.collider.tag == "Player")
                     {
-                        //Debug.Log("Detected");
-                        //Debug.DrawLine(rb.position, hit.point, Color.green);
                         return true;
                     }
                     else
