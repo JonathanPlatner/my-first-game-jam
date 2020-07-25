@@ -26,6 +26,8 @@ public class Ranger : Enemy
     [SerializeField]
     private float dragFactor = 1;
     private SpriteRenderer enemySprite;
+    private bool canChangeDirection;
+    Direction movingDirection;
 
     [Header("Detection")]
     [SerializeField]
@@ -40,6 +42,7 @@ public class Ranger : Enemy
     public GameObject projectile;
     public Transform shotPoint;
     private float detectionSlope;
+    float desiredAttackRange;
 
     private void Start()
     {
@@ -51,8 +54,7 @@ public class Ranger : Enemy
         {
             Debug.LogWarning(e.Message);
         }
-        state = State.Patrolling;
-
+        
         // Create arrays to hold one timer per state type
         maxStateForces = new float[Enum.GetNames(typeof(State)).Length];
         enemySprite = gameObject.GetComponent<SpriteRenderer>();
@@ -65,12 +67,18 @@ public class Ranger : Enemy
         detectionSlope = Mathf.Tan(detectionAngle * Mathf.Deg2Rad);
 
         remainingCooldownTime = cooldownTime;
+        canChangeDirection = true;
+        movingDirection = rb.velocity.x < 0 ? Direction.Left : Direction.Right;
+        desiredAttackRange = detectionRange + 1f;
 
+        ChangeState(State.Patrolling);
         ChangeDirectionTo(Direction.Left);
+        //ChangeDirectionTo(Direction.Right);
     }
 
     private void Update()
     {
+        movingDirection = rb.velocity.x < 0 ? Direction.Left : Direction.Right;
         switch (state)
         {
             case State.Patrolling:
@@ -81,8 +89,11 @@ public class Ranger : Enemy
                 break;
         }
 
-        if (LedgeDetect())
+        if (LedgeDetect() && canChangeDirection)
         {
+            // Don't allow the enemy to change directions right after they attempted to change directions.
+            canChangeDirection = false;
+            Invoke("EnableDirectionChange", 3f);
             switch (state)
             {
                 case State.Patrolling:
@@ -98,6 +109,12 @@ public class Ranger : Enemy
         remainingCooldownTime -= Time.deltaTime;
     }
 
+    private void ChangeState(State newState)
+    {
+        state = newState;
+        moveForce = maxStateForces[(int)state];
+    }
+
     private void FixedUpdate()
     {
         rb.AddForce(Vector2.right * moveForce);
@@ -106,42 +123,52 @@ public class Ranger : Enemy
 
     private void Patrol()
     {
-        moveForce = maxStateForces[(int)state];
-        if (facing == Direction.Left) moveForce *= -1;
-
         if (Detect(detectionRange * detectionRange))
         {
-            state = State.Attacking;
+            ChangeState(State.Attacking);
             return;
         }
     }
 
     private void Attack()
     {
-        moveForce = maxStateForces[(int)state];
-        // Try to keep the player at a distance while attacking
-        if (!Detect(detectionRange * detectionRange))
+        FacePlayer();
+        float distToPlayer = rb.position.x - target.position.x;
+        if ((distToPlayer*distToPlayer) < (desiredAttackRange*desiredAttackRange))
         {
-            if (Detect(2 * (detectionRange * detectionRange)))
+            Direction relativePlayerDir = GetPlayerDirection();
+            if (relativePlayerDir == Direction.Left)
             {
-                // Player out of range
-                state = State.Patrolling;
-                return;
+                moveForce = Math.Abs(moveForce);
             }
             else
             {
-                // Stay put and keep firing
-                moveForce = 0;
+                // Player is on the right, so move to the left to reach desiredAttackRange.
+                if (moveForce > 0)
+                    moveForce *= -1;
             }
+        }
+
+        if (!Detect(2 * (detectionRange * detectionRange)))
+        {
+            // Player out of range
+            ChangeState(State.Patrolling);
+            return;            
         }
 
         if (remainingCooldownTime <= 0)
         {
-            // Shoot
+            // Shoot 
             remainingCooldownTime = cooldownTime;
             GameObject bullet = Instantiate(projectile, shotPoint.position, Quaternion.identity);
-            bullet.GetComponent<Rigidbody2D>().AddForce(shotPoint.up * 300);
+            bullet.GetComponent<Rigidbody2D>().AddForce(shotPoint.up * 450);
         }
+    }
+
+    private void FacePlayer()
+    {
+        Direction relativePlayerDir = GetPlayerDirection();
+        ChangeDirectionTo(relativePlayerDir);
     }
 
     private bool Detect(float rangeSqr)
@@ -152,9 +179,11 @@ public class Ranger : Enemy
             {
                 float x = facing == Direction.Left ? rb.position.x - target.position.x : target.position.x - rb.position.x;
                 float y = target.position.y - rb.position.y;
-                if (y < x * detectionSlope && y > 0)
+                if (y < Math.Abs(x * detectionSlope) && y > 0)
                 {
                     RaycastHit2D hit = Physics2D.Raycast(rb.position, (Vector2)target.position - rb.position);
+                    if (hit == null)
+                        return false;
                     if (hit.collider.tag == "Player")
                     {
                         Debug.DrawLine(rb.position, hit.point, Color.red);
@@ -162,32 +191,44 @@ public class Ranger : Enemy
                     }
                     else
                     {
-                        Debug.DrawLine(rb.position, hit.point, Color.red);
+                        Debug.DrawLine(rb.position, hit.point, Color.blue);
                     }
 
                 }
                 else
                 {
-                    Debug.DrawLine(rb.position, target.position, Color.red);
+                    Debug.DrawLine(rb.position, target.position, Color.green);
                 }
 
-            }      
+            }
         }
         return false;
     }
 
     private void ChangeDirectionTo(Direction newDirection)
     {
+        if (movingDirection != newDirection)
+        {
+            moveForce *= -1;
+        }
+        if (newDirection != facing)
+        {
+            // Flip shotpoint
+            Vector3 newPos = shotPoint.transform.localPosition;
+            Quaternion newRot = shotPoint.transform.localRotation;
+            newPos.x *= -1;
+            newRot.z *= -1;
+            shotPoint.transform.localPosition = newPos;
+            shotPoint.transform.localRotation = newRot;
+        }
         facing = newDirection;
-        moveForce *= -1;
         enemySprite.flipX = newDirection == Direction.Right;
     }
 
     private bool LedgeDetect()
     {
-        Direction movingDirection = rb.velocity.x < 0 ? Direction.Left : Direction.Right;
         RaycastHit2D hit = Physics2D.Raycast(rb.position + (movingDirection == Direction.Left ? Vector2.left : Vector2.right), Vector2.down, 0.5f);
-        //Debug.DrawRay(rb.position + (movingDirection == Direction.Left ? Vector2.left : Vector2.right), Vector2.down * 0.5f);
+        Debug.DrawRay(rb.position + (movingDirection == Direction.Left ? Vector2.left : Vector2.right), Vector2.down * 0.5f);
         if (hit.collider != null)
         {
             if (hit.collider.tag != "Ground")
@@ -200,5 +241,15 @@ public class Ranger : Enemy
             return true;
         }
         return false;
+    }
+
+    private void EnableDirectionChange()
+    {
+        canChangeDirection = true;
+    }
+
+    private Direction GetPlayerDirection()
+    {
+        return rb.position.x < target.position.x ? Direction.Right : Direction.Left;
     }
 }
