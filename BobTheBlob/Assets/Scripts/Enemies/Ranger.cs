@@ -6,7 +6,7 @@ public class Ranger : Enemy
 {
     private new string name = "Ranger";
     public override string Name { get { return name; } }
-
+    public override int MaxHealth { get { return 10; } }
     private Transform target;
     public override Transform Target { get { return target; } }
 
@@ -50,7 +50,7 @@ public class Ranger : Enemy
         {
             target = GameObject.FindGameObjectWithTag("Player").transform;
         }
-        catch (NullReferenceException e)
+        catch(NullReferenceException e)
         {
             Debug.LogWarning(e.Message);
         }
@@ -59,7 +59,7 @@ public class Ranger : Enemy
         maxStateForces = new float[Enum.GetNames(typeof(State)).Length];
         enemySprite = gameObject.GetComponent<SpriteRenderer>();
 
-        for (int i = 0; i < Mathf.Min(maxStateForces.Length, maxForces.Length); i++)
+        for(int i = 0; i < Mathf.Min(maxStateForces.Length, maxForces.Length); i++)
         {
             maxStateForces[i] = maxForces[i];
         }
@@ -173,9 +173,9 @@ public class Ranger : Enemy
 
     private bool Detect(float rangeSqr)
     {
-        if (target != null)
+        if(target != null)
         {
-            if ((rb.position - (Vector2)target.position).sqrMagnitude <= rangeSqr)
+            if((rb.position - (Vector2)target.position).sqrMagnitude <= rangeSqr)
             {
                 float x = facing == Direction.Left ? rb.position.x - target.position.x : target.position.x - rb.position.x;
                 float y = target.position.y - rb.position.y;
@@ -228,15 +228,15 @@ public class Ranger : Enemy
     private bool LedgeDetect()
     {
         RaycastHit2D hit = Physics2D.Raycast(rb.position + (movingDirection == Direction.Left ? Vector2.left : Vector2.right), Vector2.down, 0.5f);
-        Debug.DrawRay(rb.position + (movingDirection == Direction.Left ? Vector2.left : Vector2.right), Vector2.down * 0.5f);
+        //Debug.DrawRay(rb.position + (movingDirection == Direction.Left ? Vector2.left : Vector2.right), Vector2.down * 0.5f);
         if (hit.collider != null)
         {
-            if (hit.collider.tag != "Ground")
+            if(hit.collider.tag != "Ground")
             {
                 return true;
             }
         }
-        else if (hit.collider == null)
+        else if(hit.collider == null)
         {
             return true;
         }

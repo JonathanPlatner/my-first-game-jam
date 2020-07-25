@@ -8,6 +8,7 @@ TagManager:
   - Enemy
   - Blade
   - Level
+  - PlayerBullet
   layers:
   - Default
   - TransparentFX
