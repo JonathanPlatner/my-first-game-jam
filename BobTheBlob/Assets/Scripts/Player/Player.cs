@@ -279,6 +279,10 @@ public class Player : MonoBehaviour
                 transform.rotation = Quaternion.Euler(0, 0, rotation - 90);
             }
         }
+        else if (collision.transform.tag == "EnemyBullet")
+        {
+            TakeDamage(25, true);
+        }
        
     }
 

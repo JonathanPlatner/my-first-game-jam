@@ -27,6 +27,7 @@ public abstract class Enemy : MonoBehaviour
         _currentHealth -= damage;
         float newHealthBarAmount = (float)GetHealth() / (float)MaxHealth;
         healthBar.fillAmount = newHealthBarAmount;
+        StartCoroutine(Flash());
     }
 
     public int GetHealth()
