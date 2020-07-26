@@ -397,6 +397,8 @@ MonoBehaviour:
     type: 3}
   shotPoint: {fileID: 2048759807593657239}
   hitSource: {fileID: 1833372535}
+  deathEffect: {fileID: 7440851024915839218, guid: b862da76080e5b34e8f2ba71c85872a1,
+    type: 3}
 --- !u!61 &2048759808698830321
 BoxCollider2D:
   m_ObjectHideFlags: 0

@@ -5,9 +5,21 @@ using UnityEngine.SceneManagement;
 
 public class LevelExit : MonoBehaviour
 {
-
+    private GameObject[] enemies;
+    private void Start()
+    {
+        enemies = GameObject.FindGameObjectsWithTag("Enemy");
+    }
     private void OnTriggerEnter2D(Collider2D collision)
     {
+        foreach(GameObject enemy in enemies)
+        {
+            if(enemy != null)
+            {
+                Debug.Log("All enemies must be destroyed before leaving level");
+                return;
+            }
+        }
         if (collision.gameObject.tag == "Player")
         {
             PersistentData.maxLevel++;

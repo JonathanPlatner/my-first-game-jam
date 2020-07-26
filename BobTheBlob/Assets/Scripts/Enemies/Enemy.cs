@@ -9,6 +9,7 @@ public abstract class Enemy : MonoBehaviour
     private SpriteRenderer[] MainSprites;
     [SerializeField]
     private SpriteRenderer[] WhiteSprites;
+   
     public abstract string Name { get; }
     public abstract Transform Target { get;  }
 

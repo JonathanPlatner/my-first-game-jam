@@ -58,6 +58,8 @@ public class Charger : Enemy
 
     [SerializeField]
     private AudioSource hitSource;
+    [SerializeField]
+    private GameObject deathEffect;
 
     private void Start()
     {
@@ -102,6 +104,7 @@ public class Charger : Enemy
         }
         if(Dead())
         {
+            Destroy(Instantiate(deathEffect, transform.position, Quaternion.identity), 5);
             Destroy(gameObject);
         }
         //Debug.Log(state);

@@ -48,6 +48,9 @@ public class Ranger : Enemy
     [SerializeField]
     private AudioSource hitSource;
 
+    [SerializeField]
+    private GameObject deathEffect;
+
     private void Start()
     {
         try
@@ -95,6 +98,7 @@ public class Ranger : Enemy
 
         if (Dead())
         {
+            Destroy(Instantiate(deathEffect, transform.position, Quaternion.identity),5);
             Destroy(gameObject);
         }
 

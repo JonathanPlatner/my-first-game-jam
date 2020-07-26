@@ -169,6 +169,8 @@ MonoBehaviour:
   swingSpeed: 10
   swingMax: 100
   hitSource: {fileID: 49225236}
+  deathEffect: {fileID: 7440851024915839218, guid: b862da76080e5b34e8f2ba71c85872a1,
+    type: 3}
 --- !u!95 &894693273469466063
 Animator:
   serializedVersion: 3
