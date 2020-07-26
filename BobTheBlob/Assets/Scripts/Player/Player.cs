@@ -281,7 +281,10 @@ public class Player : MonoBehaviour
         }
         else if (collision.transform.tag == "EnemyBullet")
         {
-            TakeDamage(25, true);
+            if(!invincible)
+            {
+                TakeDamage(25, true);
+            }
         }
        
     }
