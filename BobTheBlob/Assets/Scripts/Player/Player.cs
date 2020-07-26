@@ -84,6 +84,12 @@ public class Player : MonoBehaviour
     [SerializeField]
     private AudioClip playerSlicedClip;
 
+    [SerializeField]
+    private AudioClip launchClip;
+
+    [SerializeField]
+    private AudioClip bounceClip;
+
     public Vector2 Velocity { get { return rb.velocity; } }
 
     private void Start()
@@ -248,7 +254,8 @@ public class Player : MonoBehaviour
 
             jumps++;
             ToBouncy();
-
+            source.clip = launchClip;
+            source.Play();
 
             rb.velocity = Vector2.ClampMagnitude(dragVector, maxLaunchPower) * launchPowerScale + rb.velocity * Mathf.Clamp01(Vector2.Dot(rb.velocity.normalized, dragVector));
         }
@@ -287,6 +294,11 @@ public class Player : MonoBehaviour
                 normal = collision.GetContact(0).normal;
                 float rotation = Mathf.Atan2(normal.y, normal.x) * Mathf.Rad2Deg;
                 transform.rotation = Quaternion.Euler(0, 0, rotation - 90);
+            }
+            else
+            {
+                source.clip = bounceClip;
+                source.Play();
             }
         }
         else if (collision.transform.tag == "EnemyBullet")

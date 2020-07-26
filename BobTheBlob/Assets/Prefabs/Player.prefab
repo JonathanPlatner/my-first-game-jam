@@ -241,6 +241,8 @@ MonoBehaviour:
   source: {fileID: 1833431562}
   blobShootClip: {fileID: 8300000, guid: 2fce4d3903f560f46a19ff3229c9d614, type: 3}
   playerSlicedClip: {fileID: 8300000, guid: fc273b3b59b104e4b850ed2aaea4b7d7, type: 3}
+  launchClip: {fileID: 8300000, guid: 7def3f2d36e940644966096c438a186a, type: 3}
+  bounceClip: {fileID: 8300000, guid: 72c488c7edc8da548acf157506a9118e, type: 3}
 --- !u!114 &3360856390130405918
 MonoBehaviour:
   m_ObjectHideFlags: 0
