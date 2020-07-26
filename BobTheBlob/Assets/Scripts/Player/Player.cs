@@ -22,8 +22,6 @@ public class Player : MonoBehaviour
     private Transform cannonTransform;
 
     private float actionAngle;
-    //[SerializeField]
-    //private bool bounce;
 
     [SerializeField]
     private InputManager im;
@@ -67,6 +65,8 @@ public class Player : MonoBehaviour
     [SerializeField]
     private GameObject bullet;
 
+    private int health = 100;
+
 
     public Vector2 Velocity { get { return rb.velocity; } }
 
@@ -90,7 +90,7 @@ public class Player : MonoBehaviour
             ToBouncy();
         }
 
-        
+
         actionTransform.rotation = Quaternion.Euler(0, 0, mouseAngle * Mathf.Rad2Deg);
         if(im.Cannon.Active())
         {
@@ -157,6 +157,7 @@ public class Player : MonoBehaviour
     public void Bounce(Vector2 velocity)
     {
         rb.velocity = velocity;
+        health += (int)velocity.magnitude / 2;
     }
     private void ToBouncy()
     {
@@ -220,10 +221,10 @@ public class Player : MonoBehaviour
         Time.fixedDeltaTime = defaultFixedDeltaTime;
         if(dragVector.magnitude > 0.1f)
         {
-            
+
             jumps++;
             ToBouncy();
-            
+
 
             rb.velocity = Vector2.ClampMagnitude(dragVector, maxLaunchPower) * launchPowerScale + rb.velocity * Mathf.Clamp01(Vector2.Dot(rb.velocity.normalized, dragVector));
         }
@@ -255,6 +256,10 @@ public class Player : MonoBehaviour
                 transform.rotation = Quaternion.Euler(0, 0, rotation - 90);
             }
         }
+        if(collision.transform.tag == "")
+        {
+
+        }
     }
 
     private void OnCollisionStay2D(Collision2D collision)
@@ -278,4 +283,5 @@ public class Player : MonoBehaviour
         {
         }
     }
+
 }

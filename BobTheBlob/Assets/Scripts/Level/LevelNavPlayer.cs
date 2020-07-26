@@ -5,9 +5,11 @@ using UnityEngine;
 public class LevelNavPlayer : MonoBehaviour
 {
     private Vector3[] levelPositions;
-    private int index;
+    public int index;
     [SerializeField]
     private Rigidbody2D rb;
+    private int maxIndex = 0;
+
 
     private Vector2 input;
     private void Start()
@@ -19,6 +21,7 @@ public class LevelNavPlayer : MonoBehaviour
             levelPositions[i] = levelParent.GetChild(i).position;
         }
         index = PersistentData.LevelIndex;
+        maxIndex = PersistentData.maxLevel;
         rb.MovePosition(levelPositions[index]);
     }
 
@@ -56,7 +59,10 @@ public class LevelNavPlayer : MonoBehaviour
 
         if(Vector2.Dot(forward, input) > 0)
         {
-            index++;
+            if(index < maxIndex)
+            {
+                index++;
+            }
         }
         else if(Vector2.Dot(backward, input) > 0)
         {

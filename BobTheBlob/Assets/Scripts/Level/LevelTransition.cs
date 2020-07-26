@@ -14,6 +14,6 @@ public class LevelTransition : MonoBehaviour
     public void Load()
     {
         Debug.Log("Loaded level: " + levelName);
-        //SceneManager.LoadScene(levelName);  // Enable when levels are there
+        SceneManager.LoadScene(levelName);  // Enable when levels are there
     }
 }
