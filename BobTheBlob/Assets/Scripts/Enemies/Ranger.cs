@@ -44,6 +44,10 @@ public class Ranger : Enemy
     private float detectionSlope;
     float desiredAttackRange;
 
+
+    [SerializeField]
+    private AudioSource hitSource;
+
     private void Start()
     {
         try
@@ -270,11 +274,13 @@ public class Ranger : Enemy
 
                 player.Bounce(Vector2.up * velocityComponentTowardEnemy + player.Velocity.x * Vector2.right);
                 TakeDamage((int)(velocityComponentTowardEnemy / 2));
+                hitSource.Play();
             }
         }
         else if (collision.collider.tag == "PlayerBullet")
         {
             TakeDamage(2);
+            hitSource.Play();
         }
     }
 }

@@ -75,6 +75,14 @@ public class Player : MonoBehaviour
     private float rateOfFire = 3;
     private float timeSinceLastShot = 0;
 
+    [SerializeField]
+    private AudioSource source;
+
+    [SerializeField]
+    private AudioClip blobShootClip;
+
+    [SerializeField]
+    private AudioClip playerSlicedClip;
 
     public Vector2 Velocity { get { return rb.velocity; } }
 
@@ -256,6 +264,8 @@ public class Player : MonoBehaviour
                 go_bullet.GetComponent<Rigidbody2D>().AddForce(cannonTransform.up * 20);
                 TakeDamage(5, false);
                 timeSinceLastShot = 0;
+                source.clip = blobShootClip;
+                source.Play();
             }
         }
     }
@@ -361,7 +371,14 @@ public class Player : MonoBehaviour
             if(!invincible)
             {
                 TakeDamage(20, true);
+                source.clip = playerSlicedClip;
+                source.Play();
             }
         }
+    }
+
+    public float GetHealthPercentage()
+    {
+        return (float)health / 100;
     }
 }

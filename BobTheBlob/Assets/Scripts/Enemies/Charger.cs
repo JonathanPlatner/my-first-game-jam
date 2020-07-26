@@ -56,6 +56,9 @@ public class Charger : Enemy
     [SerializeField]
     private float swingMax = 100;
 
+    [SerializeField]
+    private AudioSource hitSource;
+
     private void Start()
     {
         try
@@ -388,11 +391,13 @@ public class Charger : Enemy
 
                 player.Bounce(Vector2.up * velocityComponentTowardEnemy + player.Velocity.x * Vector2.right);
                 TakeDamage((int)(velocityComponentTowardEnemy / 2));
+                hitSource.Play();
             }
         }
         else if (collision.collider.tag == "PlayerBullet")
         {
             TakeDamage(2);
+            hitSource.Play();
         }
     }
 }
