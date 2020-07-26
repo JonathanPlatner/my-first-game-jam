@@ -27,10 +27,13 @@ public class PlayerCamera : MonoBehaviour
     }
     private void FixedUpdate()
     {
-        Vector3 targetCameraPosition = transform.position * (1 - snap) + target.position * snap;
-        targetCameraPosition.z = transform.position.z;
-        
-        transform.position = UpdateCameraBounds(targetCameraPosition);
+        if(target != null)
+        {
+            Vector3 targetCameraPosition = transform.position * (1 - snap) + target.position * snap;
+            targetCameraPosition.z = transform.position.z;
+
+            transform.position = UpdateCameraBounds(targetCameraPosition);
+        }
 
     }
     private Vector3 UpdateCameraBounds(Vector3 desiredPosition)

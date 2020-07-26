@@ -4,6 +4,10 @@ using UnityEngine;
 
 public class Player : MonoBehaviour
 {
+    [SerializeField]
+    private SpriteRenderer mainSprite;
+    [SerializeField]
+    private SpriteRenderer whiteSprite;
     enum Mode { Bouncy, Sticky }
     private Mode mode;
     [SerializeField]
@@ -67,6 +71,10 @@ public class Player : MonoBehaviour
 
     private int health = 100;
 
+    private bool invincible = false;
+    private float rateOfFire = 3;
+    private float timeSinceLastShot = 0;
+
 
     public Vector2 Velocity { get { return rb.velocity; } }
 
@@ -90,7 +98,10 @@ public class Player : MonoBehaviour
             ToBouncy();
         }
 
-
+        if (timeSinceLastShot < 1 / rateOfFire)
+        {
+            timeSinceLastShot += Time.deltaTime;
+        }
         actionTransform.rotation = Quaternion.Euler(0, 0, mouseAngle * Mathf.Rad2Deg);
         if(im.Cannon.Active())
         {
@@ -153,11 +164,16 @@ public class Player : MonoBehaviour
             }
 
         }
+
+        if(Dead())
+        {
+            Destroy(gameObject);
+        }
     }
     public void Bounce(Vector2 velocity)
     {
         rb.velocity = velocity;
-        health += (int)velocity.magnitude / 2;
+        TakeDamage(-5, false);
     }
     private void ToBouncy()
     {
@@ -232,9 +248,16 @@ public class Player : MonoBehaviour
     }
     private void Shoot()
     {
-        Debug.Log("shoot");
-        GameObject go_bullet = Instantiate(bullet, cannonTransform.position, Quaternion.identity);
-        go_bullet.GetComponent<Rigidbody2D>().AddForce(cannonTransform.up * 20);
+        if(health > 5)
+        {
+            if(timeSinceLastShot >= 1 / rateOfFire)
+            {
+                GameObject go_bullet = Instantiate(bullet, cannonTransform.position, Quaternion.identity);
+                go_bullet.GetComponent<Rigidbody2D>().AddForce(cannonTransform.up * 20);
+                TakeDamage(5, false);
+                timeSinceLastShot = 0;
+            }
+        }
     }
     private void CancelDrag()
     {
@@ -256,10 +279,7 @@ public class Player : MonoBehaviour
                 transform.rotation = Quaternion.Euler(0, 0, rotation - 90);
             }
         }
-        if(collision.transform.tag == "")
-        {
-
-        }
+       
     }
 
     private void OnCollisionStay2D(Collision2D collision)
@@ -283,5 +303,58 @@ public class Player : MonoBehaviour
         {
         }
     }
+    
+    private void TakeDamage(int damage, bool flash)
+    {
+        if (flash)
+        {
+            StartCoroutine(Flash());
+        }
+        health -= damage;
+        if(health > 100)
+        {
+            health = 100;
+        }
+    }
 
+    private bool Dead()
+    {
+        return health <= 0;
+    }
+
+    IEnumerator Flash()
+    {
+        int flashCount = 4;
+        float flashInterval = 0.125f;
+        bool flashState = false;
+        invincible = true;
+        for(int i = 0; i < flashCount; i++)
+        {
+            if(flashState)
+            {
+                mainSprite.enabled = true;
+                whiteSprite.enabled = false;
+            }
+            else
+            {
+                mainSprite.enabled = false;
+                whiteSprite.enabled = true;
+            }
+            flashState = !flashState;
+            yield return new WaitForSeconds(flashInterval);
+        }
+        mainSprite.enabled = true;
+        whiteSprite.enabled = false;
+        invincible = false;
+    }
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if(collision.transform.tag == "Blade")
+        {
+            if(!invincible)
+            {
+                TakeDamage(20, true);
+            }
+        }
+    }
 }
