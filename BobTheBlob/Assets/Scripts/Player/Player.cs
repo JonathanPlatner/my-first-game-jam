@@ -67,7 +67,6 @@ public class Player : MonoBehaviour
     [SerializeField]
     private GameObject bullet;
 
-    private int collisionCount;
 
     public Vector2 Velocity { get { return rb.velocity; } }
 
@@ -91,6 +90,7 @@ public class Player : MonoBehaviour
             ToBouncy();
         }
 
+        
         actionTransform.rotation = Quaternion.Euler(0, 0, mouseAngle * Mathf.Rad2Deg);
         if(im.Cannon.Active())
         {
@@ -111,7 +111,7 @@ public class Player : MonoBehaviour
             arrowTransform.gameObject.SetActive(true);
         }
 
-        if (im.Action.Down() && im.Cannon.Active())
+        if(im.Action.Down() && im.Cannon.Active())
         {
             Shoot();
         }
@@ -119,7 +119,7 @@ public class Player : MonoBehaviour
         {
             StartDrag();
         }
-        if(im.Action.Up() && dragging)
+        if((im.Action.Up() || !im.Action.Active()) && dragging)
         {
             EndDrag();
         }
@@ -129,11 +129,11 @@ public class Player : MonoBehaviour
         }
         moveVector = new Vector2(im.Lateral.Value(), im.Longitudinal.Value());
 
-        if (mode == Mode.Sticky)
+        if(mode == Mode.Sticky)
         {
             RaycastHit2D hit = Physics2D.Raycast(rb.position, -normal, 0.4f);
             Debug.DrawRay(rb.position, -normal * 0.4f);
-            if (hit.collider != null)
+            if(hit.collider != null)
             {
                 if(hit.collider.tag == "Ground")
                 {
@@ -144,20 +144,15 @@ public class Player : MonoBehaviour
                     //Debug.Log("no hit");
                     ToBouncy();
                 }
-                
+
             }
             else
             {
                 //Debug.Log("no hit");
                 ToBouncy();
             }
-            
+
         }
-        //if(collisionCount <= 0)
-        //{
-        //    collisionCount = 0;
-        //    ToBouncy();
-        //}
     }
     public void Bounce(Vector2 velocity)
     {
@@ -172,7 +167,7 @@ public class Player : MonoBehaviour
         anim.SetBool("Bouncy", true);
         anim.SetBool("Sticky", false);
         anim.SetBool("QuickSticky", false);
-        
+
     }
     private void ToSticky(bool fast)
     {
@@ -220,13 +215,15 @@ public class Player : MonoBehaviour
     private void EndDrag()
     {
         Vector2 dragVector = im.Mouse.World(playerCam) - dragPosition;
+        dragging = false;
+        Time.timeScale = 1;
+        Time.fixedDeltaTime = defaultFixedDeltaTime;
         if(dragVector.magnitude > 0.1f)
         {
-            Time.timeScale = 1;
-            Time.fixedDeltaTime = defaultFixedDeltaTime;
+            
             jumps++;
             ToBouncy();
-            dragging = false;
+            
 
             rb.velocity = Vector2.ClampMagnitude(dragVector, maxLaunchPower) * launchPowerScale + rb.velocity * Mathf.Clamp01(Vector2.Dot(rb.velocity.normalized, dragVector));
         }
@@ -250,7 +247,6 @@ public class Player : MonoBehaviour
         jumps = 0;
         if(collision.transform.tag == "Ground")
         {
-            collisionCount++;
             if(im.Grab.Active())
             {
                 ToSticky(true);
@@ -273,23 +269,13 @@ public class Player : MonoBehaviour
                 float rotation = Mathf.Atan2(normal.y, normal.x) * Mathf.Rad2Deg;
                 transform.rotation = Quaternion.Euler(0, 0, rotation - 90);
             }
-            //delayInput = false;
         }
-        //else if(collision.transform.tag == "Ground" && im.Grab.Active() && mode == Mode.Sticky && delayInput)
-        //{
-        //    ToBouncy();
-        //    Vector2 normal = collision.GetContact(0).normal;
-        //    float rotation = Mathf.Atan2(normal.y, normal.x) * Mathf.Rad2Deg;
-        //    transform.rotation = Quaternion.Euler(0, 0, rotation - 90);
-        //    delayInput = false;
-        //}
     }
 
     private void OnCollisionExit2D(Collision2D collision)
     {
         if(collision.transform.tag == "Ground")
         {
-            collisionCount--;
         }
     }
 }
