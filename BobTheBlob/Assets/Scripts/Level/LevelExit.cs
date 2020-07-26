@@ -6,6 +6,9 @@ using UnityEngine.SceneManagement;
 public class LevelExit : MonoBehaviour
 {
     private GameObject[] enemies;
+
+    [SerializeField]
+    private int levelNum;
     private void Start()
     {
         enemies = GameObject.FindGameObjectsWithTag("Enemy");
@@ -23,6 +26,7 @@ public class LevelExit : MonoBehaviour
         if (collision.gameObject.tag == "Player")
         {
             PersistentData.maxLevel++;
+            PersistentData.LevelIndex = levelNum;
             SceneManager.LoadScene("LevelSelection");
         }
     }
